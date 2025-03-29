@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Virtual Mouse</title>
+    <style>
+        :root {
+            --primary-color: #3a6cf4;
+            --accent-color: #5e17eb;
+            --dark-color: #121212;
+            --light-color: #ffffff;
+            --gray-100: #f8f9fa;
+            --gray-200: #e9ecef;
+            --gray-300: #dee2e6;
+            --gray-800: #343a40;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --transition: all 0.3s ease;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f7f9fc;
+            color: var(--gray-800);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+        }
+        
+        header h1 {
+            font-weight: 700;
+            font-size: 2.2rem;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        header p {
+            font-weight: 300;
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+        }
+        
+        .main-panel {
+            background-color: var(--light-color);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            transition: var(--transition);
+        }
+        
+        .main-panel:hover {
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .video-container {
+            position: relative;
+            width: 100%;
+            height: 420px;
+            background-color: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        #video-feed {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 12px;
+            transition: opacity 0.5s ease;
+        }
+        
+        .video-mirror {
+            transform: scaleX(-1);
+        }
+        
+        .video-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 1.5rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        
+        .video-container:hover .video-overlay {
+            opacity: 1;
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+        
+        .sidebar {
+            display: grid;
+            grid-template-rows: auto auto auto;
+            gap: 24px;
+        }
+        
+        .panel {
+            background-color: var(--light-color);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            padding: 24px;
+            transition: var(--transition);
+        }
+        
+        .panel:hover {
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .panel h3 {
+            margin-top: 0;
+            border-bottom: 1px solid var(--gray-200);
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+            color: var(--primary-color);
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
+        
+        .status {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .status-indicator {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            margin-right: 12px;
+            transition: background-color 0.3s ease;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .status-indicator::after {
+            content: '';
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: white;
+            opacity: 0.7;
+        }
+        
+        .active {
+            background-color: var(--success-color);
+            box-shadow: 0 0 8px var(--success-color);
+        }
+        
+        .inactive {
+            background-color: var(--danger-color);
+        }
+        
+        .pending {
+            background-color: var(--warning-color);
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+        
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background-color 0.3s, transform 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        button:hover {
+            background-color: var(--accent-color);
+            transform: translateY(-2px);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            background-color: var(--gray-300);
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        button i {
+            font-size: 16px;
+        }
+        
+        .settings-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        
+        .settings-row label {
+            font-weight: 500;
+            color: var(--gray-800);
+        }
+        
+        .gesture-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        
+        .gesture-item {
+            background-color: var(--gray-100);
+            padding: 12px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .gesture-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .gesture-icon {
+            width: 44px;
+            height: 44px;
+            margin-right: 12px;
+            background-color: #e6effd;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: var(--primary-color);
+        }
+        
+        .gesture-status {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-left: auto;
+        }
+        
+        .settings-toggle {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        
+        .settings-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+        
+        input:checked + .slider {
+            background-color: var(--primary-color);
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        #gesture-info {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: var(--gray-100);
+            border-radius: 10px;
+            border-left: 4px solid var(--primary-color);
+            transition: transform 0.3s, box-shadow 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #gesture-info::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--primary-color);
+        }
+        
+        #gesture-info.active {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+        
+        #gesture-info h3 {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            color: var(--dark-color);
+            font-weight: 600;
+            border: none;
+            padding: 0;
+        }
+        
+        #current-gesture {
+            color: var(--primary-color);
+            margin-left: 8px;
+            font-weight: 700;
+        }
+        
+        .loading-spinner {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 12px;
+            z-index: 10;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        /* Additional settings panel */
+        .settings-panel {
+            margin-top: 24px;
+        }
+        
+        .range-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 5px;
+            background: var(--gray-300);
+            outline: none;
+        }
+        
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .range-slider::-webkit-slider-thumb:hover {
+            background: var(--accent-color);
+        }
+        .button-container {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition: background-color 0.3s ease;
+    }
+
+    .btn-primary {
+        background-color: #3a6cf4;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background-color: #2a5ad4;
+    }
+
+    .btn-danger {
+        background-color: #ef4444;
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background-color: #d43f3f;
+    }
+
+    .btn:disabled {
+        background-color: #cccccc;
+        cursor: not-allowed;
+    }
+
+    .game-gestures {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        margin-top: 20px;
+    }
+        
+        /* Toast notifications */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--dark-color);
+            color: white;
+            padding: 16px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 100;
+        }
+        
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        .toast-success {
+            border-left: 4px solid var(--success-color);
+        }
+        
+        .toast-warning {
+            border-left: 4px solid var(--warning-color);
+        }
+        
+        .toast-error {
+            border-left: 4px solid var(--danger-color);
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <header>
+        <h1><i class="fas fa-hand-paper"></i> Gesture Control Dashboard</h1>
+        <p>Control your computer with hand gestures, eye tracking, and voice commands</p>
+    </header>
+    
+    <div class="container">
+        <div class="dashboard">
+            <div class="main-panel">
+                <div class="video-container">
+                    <div id="loading-spinner" class="loading-spinner">
+                        <div class="spinner"></div>
+                    </div>
+                    <video id="video-feed" autoplay playsinline class="video-mirror"></video>
+                    <div class="video-overlay">
+                        <span id="overlay-message">Make a gesture to interact</span>
+                    </div>
+                </div>
+                
+                <div id="gesture-info">
+                    <h3>Current Gesture: <span id="current-gesture">None</span></h3>
+                    <p id="gesture-description">No gesture detected. Make a gesture to control your computer.</p>
+                </div>
+                
+                <div class="controls">
+                    <button id="start-btn"><i class="fas fa-play"></i> Start Gesture Control</button>
+                    <button id="stop-btn" disabled><i class="fas fa-stop"></i> Stop</button>
+                    <button id="calibrate-btn"><i class="fas fa-sync-alt"></i> Calibrate</button>
+                    <button id="settings-btn"><i class="fas fa-cog"></i> Settings</button>
+                </div>
+                
+                <div class="settings-panel" id="settings-panel" style="display: none;">
+                    <h3>Settings</h3>
+                    <div class="settings-row">
+                        <label for="mirror-toggle">Mirror Camera</label>
+                        <label class="settings-toggle">
+                            <input type="checkbox" id="mirror-toggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="settings-row">
+                        <label for="sensitivity-slider">Gesture Sensitivity</label>
+                        <input type="range" id="sensitivity-slider" class="range-slider" min="1" max="10" value="5">
+                    </div>
+                    <div class="settings-row">
+                        <label for="prediction-confidence">Prediction Confidence</label>
+                        <input type="range" id="prediction-confidence" class="range-slider" min="1" max="10" value="7">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="sidebar">
+                <div class="panel" id="gesture-panel">
+                    <h3><i class="fas fa-hand-sparkles"></i> Gesture Controls</h3>
+                    <div class="status">
+                        <div class="status-indicator inactive" id="gesture-status"></div>
+                        <span>Hand Gestures</span>
+                    </div>
+                    
+                    <div class="gesture-list">
+                        <div class="gesture-item">
+                            <div class="gesture-icon">✌</div>
+                            <div>
+                                <strong>V Gesture</strong>
+                                <p>Mouse movement</p>
+                            </div>
+                            <div class="gesture-status active"></div>
+                        </div>
+                        <div class="gesture-item">
+                            <div class="gesture-icon">👊</div>
+                            <div>
+                                <strong>Fist</strong>
+                                <p>Mouse drag</p>
+                            </div>
+                            <div class="gesture-status active"></div>
+                        </div>
+                        <div class="gesture-item">
+                            <div class="gesture-icon">☝</div>
+                            <div>
+                                <strong>Index</strong>
+                                <p>Right click</p>
+                            </div>
+                            <div class="gesture-status active"></div>
+                        </div>
+                        <div class="gesture-item">
+                            <div class="gesture-icon">✋</div>
+                            <div>
+                                <strong>Palm</strong>
+                                <p>Reset</p>
+                            </div>
+                            <div class="gesture-status active"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="panel" id="eye-panel">
+                    <h3><i class="fas fa-eye"></i> Eye Tracking</h3>
+                    <div class="status">
+                        <div class="status-indicator inactive" id="eye-status"></div>
+                        <span>Eye Tracking</span>
+                    </div>
+                    <p>Eye tracking module ready to be integrated.</p>
+                    <button id="calibrate-eye-btn"><i class="fas fa-crosshairs"></i> Calibrate Eye Tracking</button>
+                </div>
+                
+                <div class="panel" id="voice-panel">
+                    <h3><i class="fas fa-microphone"></i> Voice Recognition</h3>
+                    <div class="status">
+                        <div class="status-indicator inactive" id="voice-status"></div>
+                        <span>Voice Commands</span>
+                    </div>
+                    <p>Voice recognition module ready to be integrated.</p>
+                    <button id="start-voice-btn"><i class="fas fa-headset"></i> Start Listening</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="main-panel" style="margin-top: 24px;">
+            <h3><i class="fas fa-gamepad"></i> Game Integration</h3>
+            <div class="status">
+                <div class="status-indicator inactive" id="game-status"></div>
+                <span>Game Control Module</span>
+            </div>
+            <p>Connect your gesture controls to compatible games and applications.</p>
+            
+            <div class="game-control-section">
+                <div class="button-container">
+                   <div id="gesture-info" class="panel">
+                </div>
+                
+                <div class="button-container">
+                    <button id="start-game-control-btn" class="btn btn-primary">
+                        <i class="fas fa-play"></i> Start Game Control
+                    </button>
+                    <button id="stop-game-control-btn" class="btn btn-danger" disabled>
+                        <i class="fas fa-stop"></i> Stop Game Control
+                    </button>
+                </div>
+                </div>    
+                <div class="gesture-settings">
+                    <div class="settings-row">
+                        <label for="game-sensitivity">Game Control Sensitivity</label>
+                        <input type="range" id="game-sensitivity" class="range-slider" min="1" max="10" value="5">
+                    </div>
+                </div>
+        
+                <div class="gesture-list game-gestures">
+                    <div class="gesture-item">
+                        <div class="gesture-icon">☝️</div>
+                        <div>
+                            <strong>Index Up</strong>
+                            <p>Cursor Up</p>
+                        </div>
+                        <div class="gesture-status active"></div>
+                    </div>
+                    <div class="gesture-item">
+                        <div class="gesture-icon">👇</div>
+                        <div>
+                            <strong>Index Down</strong>
+                            <p>Cursor Down</p>
+                        </div>
+                        <div class="gesture-status active"></div>
+                    </div>
+                    <div class="gesture-item">
+                        <div class="gesture-icon">👉</div>
+                        <div>
+                            <strong>Index Right</strong>
+                            <p>Cursor Right</p>
+                        </div>
+                        <div class="gesture-status active"></div>
+                    </div>
+                    <div class="gesture-item">
+                        <div class="gesture-icon">👈</div>
+                        <div>
+                            <strong>Index Left</strong>
+                            <p>Cursor Left</p>
+                        </div>
+                        <div class="gesture-status active"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+            <button id="game-settings-btn"><i class="fas fa-cogs"></i> Game Settings</button>
+        </div>
+    </div>
+    
+    <div id="toast" class="toast">
+        <i class="fas fa-info-circle"></i>
+        <span id="toast-message"></span>
+    </div>
+
+    <script>
+        // This is where your JavaScript should be properly contained
+        document.addEventListener("DOMContentLoaded", function() {
+            // All your JavaScript code goes here inside this block
+            // Global variables
+            let videoElement = document.getElementById('video-feed');
+            let startButton = document.getElementById('start-btn');
+            let stopButton = document.getElementById('stop-btn');
+            let calibrateButton = document.getElementById('calibrate-btn');
+            let settingsButton = document.getElementById('settings-btn');
+            let settingsPanel = document.getElementById('settings-panel');
+            let mirrorToggle = document.getElementById('mirror-toggle');
+            let loadingSpinner = document.getElementById('loading-spinner');
+            let gestureStatus = document.getElementById('gesture-status');
+            let eyeStatus = document.getElementById('eye-status');
+            let voiceStatus = document.getElementById('voice-status');
+            let gameStatus = document.getElementById('game-status');
+            let currentGesture = document.getElementById('current-gesture');
+            let gestureDescription = document.getElementById('gesture-description');
+            let gestureInfo = document.getElementById('gesture-info');
+            let toast = document.getElementById('toast');
+            let toastMessage = document.getElementById('toast-message');
+
+            // Initialize as mirrored
+            let isMirrored = true;
+
+            // Gesture descriptions
+            const gestureData = {
+                'V_GEST': {
+                    name: 'V Gesture',
+                    description: 'Moving the mouse pointer. Make a V shape with your index and middle fingers.'
+                },
+                'FIST': {
+                    name: 'Fist',
+                    description: 'Click and drag. Make a fist to grab and move objects.'
+                },
+                'INDEX': {
+                    name: 'Index Finger',
+                    description: 'Right click. Point with your index finger only.'
+                },
+                'MID': {
+                    name: 'Middle Finger',
+                    description: 'Left click. Extend your middle finger while keeping others closed.'
+                },
+                'TWO_FINGER_CLOSED': {
+                    name: 'Two Finger Closed',
+                    description: 'Double click. Hold index and middle fingers together.'
+                },
+                'PINCH_MAJOR': {
+                    name: 'Major Pinch',
+                    description: 'Control brightness/volume. Pinch with thumb and index finger (right hand).'
+                },
+                'PINCH_MINOR': {
+                    name: 'Minor Pinch',
+                    description: 'Scroll pages. Pinch with thumb and index finger (left hand).'
+                },
+                'PALM': {
+                    name: 'Palm',
+                    description: 'Reset/Idle state. Show your open palm.'
+                },
+                'INDEX_UP': {
+                    name: 'Index Up',
+                    description: 'Move cursor upwards. Point index finger upward.'
+                },
+                'INDEX_DOWN': {
+                    name: 'Index Down', 
+                    description: 'Move cursor downwards. Point index finger downward.'
+                },
+                'INDEX_RIGHT': {
+                    name: 'Index Right',
+                    description: 'Move cursor to the right. Point index finger to the right.'
+                },
+                'INDEX_LEFT': {
+                    name: 'Index Left',
+                    description: 'Move cursor to the left. Point index finger to the left.'
+                }
+            };
+
+            // Ensure settingsButton and settingsPanel exist before adding event listener
+            if (settingsButton && settingsPanel) {
+                settingsButton.addEventListener('click', function() {
+                    if (settingsPanel.style.display === 'none') {
+                        settingsPanel.style.display = 'block';
+                    } else {
+                        settingsPanel.style.display = 'none';
+                    }
+                });
+            } else {
+                console.error("Settings button or settings panel not found in the DOM.");
+            }
+
+            // Mirror toggle
+            mirrorToggle.addEventListener('change', function() {
+                isMirrored = this.checked;
+                if (isMirrored) {
+                    videoElement.classList.add('video-mirror');
+                } else {
+                    videoElement.classList.remove('video-mirror');
+                }
+                showToast('Camera mirroring ' + (isMirrored ? 'enabled' : 'disabled'), 'success');
+            });
+            
+            // Start gesture control
+            startButton.addEventListener('click', function() {
+                // Show loading spinner
+                loadingSpinner.classList.remove('hidden');
+                
+                // Request camera access
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(function(stream) {
+                        videoElement.srcObject = stream;
+                        
+                        // Ensure video is mirrored based on the toggle state
+                        if (isMirrored) {
+                            videoElement.classList.add('video-mirror');
+                        } else {
+                            videoElement.classList.remove('video-mirror');
+                        }
+                        
+                        // Apply transition effect when video loads
+                        videoElement.style.opacity = '0';
+                        
+                        videoElement.onloadedmetadata = function() {
+                            // Hide spinner and show video with fade effect
+                            setTimeout(() => {
+                                loadingSpinner.classList.add('hidden');
+                                videoElement.style.opacity = '1';
+                            }, 500);
+                            
+                            // Update UI
+                            gestureStatus.classList.remove('inactive');
+                            gestureStatus.classList.add('active');
+                            startButton.disabled = true;
+                            stopButton.disabled = false;
+                            
+                            showToast('Gesture control activated', 'success');
+                            
+                            // Simulate gesture detection
+                            simulateGestureDetection();
+                        };
+                    })
+                    .catch(function(error) {
+                        console.error('Error accessing camera:', error);
+                        loadingSpinner.classList.add('hidden');
+                        showToast('Could not access the camera. Please check permissions.', 'error');
+                    });
+            });
+            
+            // Stop gesture control
+            stopButton.addEventListener('click', function() {
+                // Stop video stream
+                if (videoElement.srcObject) {
+                    videoElement.srcObject.getTracks().forEach(track => track.stop());
+                    videoElement.srcObject = null;
+                }
+                
+                gestureStatus.classList.remove('active');
+                gestureStatus.classList.add('inactive');
+                startButton.disabled = false;
+                stopButton.disabled = true;
+                
+                // Reset gesture display
+                currentGesture.textContent = 'None';
+                gestureDescription.textContent = 'No gesture detected. Make a gesture to control your computer.';
+                gestureInfo.classList.remove('active');
+                
+                showToast('Gesture control stopped', 'warning');
+            });
+            
+            // Calibrate
+            calibrateButton.addEventListener('click', function() {
+                if (videoElement.srcObject) {
+                    showToast('Calibration started. Position your hand in the center of the frame.', 'success');
+                    
+                    // Visual feedback for calibration
+                    document.getElementById('overlay-message').textContent = 'Calibrating...';
+                    videoElement.style.opacity = '0.8';
+                    
+                    // Simulate calibration
+                    setTimeout(() => {
+                        document.getElementById('overlay-message').textContent = 'Make a gesture to interact';
+                        videoElement.style.opacity = '1';
+                        showToast('Calibration complete!', 'success');
+                    }, 3000);
+                } else {
+                    showToast('Please start the gesture control first.', 'warning');
+                }
+            });
+            
+            // Eye tracking calibration
+            document.getElementById('calibrate-eye-btn').addEventListener('click', function() {
+                showToast('Eye tracking calibration started. Follow the dots on screen.', 'success');
+                
+                // Simulate activation
+                eyeStatus.classList.remove('inactive');
+                eyeStatus.classList.add('pending');
+                setTimeout(() => {
+                    eyeStatus.classList.remove('pending');
+                    eyeStatus.classList.add('active');
+                    showToast('Eye tracking calibration complete!', 'success');
+                }, 2000);
+            });
+            
+            // Voice recognition start
+            document.getElementById('start-voice-btn').addEventListener('click', function() {
+                const isListening = voiceStatus.classList.contains('active');
+                
+                if (!isListening) {
+                    showToast('Voice recognition activated. Try saying "click", "scroll up", or "open browser".', 'success');
+                    // Activate
+                    voiceStatus.classList.remove('inactive');
+                    voiceStatus.classList.add('active');
+                    document.getElementById('start-voice-btn').innerHTML = '<i class="fas fa-microphone-slash"></i> Stop Listening';
+                } else {
+                    showToast('Voice recognition deactivated.', 'warning');
+                    // Deactivate
+                    voiceStatus.classList.remove('active');
+                    voiceStatus.classList.add('inactive');
+                    document.getElementById('start-voice-btn').innerHTML = '<i class="fas fa-headset"></i> Start Listening';
+                }
+            });
+            
+            // Add these variables at the top of your script
+let gesturePollingInterval;
+let isGameControlActive = false;
+
+// Update the start game control button event listener
+document.getElementById('start-game-control-btn').addEventListener('click', async function() {
+    try {
+        // Show loading state
+        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting...';
+        this.disabled = true;
+        
+        // Start the gesture control
+        const response = await fetch('http://localhost:5000/start_game_gestures', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            // Update UI
+            gameStatus.classList.remove('inactive');
+            gameStatus.classList.add('active');
+            startGameControlBtn.disabled = true;
+            stopGameControlBtn.disabled = false;
+            
+            // Start polling for gesture updates
+            gesturePollingInterval = setInterval(pollGesture, 300);
+            
+            showToast('Game control activated!', 'success');
+        } else {
+            showToast(data.message || 'Failed to start', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Connection failed', 'error');
+    } finally {
+        this.innerHTML = '<i class="fas fa-gamepad"></i> Start Game Control';
+        this.disabled = false;
+    }
+});
+
+//stop button
+// Global variable
+let gesturePollingInterval = null;
+
+document.getElementById('stop-game-control-btn').addEventListener('click', async function() {
+    console.log("Stop button clicked");  // Debug
+    
+    try {
+        const response = await fetch('http://localhost:5000/stop_gesture_control', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        console.log("Stop response:", response);  // Debug
+        
+        const data = await response.json();
+        console.log("Stop data:", data);  // Debug
+        
+        if (data.status === 'success') {
+            // Clear the polling interval
+            if (gesturePollingInterval) {
+                clearInterval(gesturePollingInterval);
+                gesturePollingInterval = null;
+            }
+            
+            // Update UI
+            document.getElementById('game-status').classList.remove('active');
+            document.getElementById('game-status').classList.add('inactive');
+            document.getElementById('start-game-control-btn').disabled = false;
+            this.disabled = true;
+            
+            showToast('Control stopped successfully', 'success');
+        } else {
+            showToast('Stop failed: ' + (data.message || 'Unknown error'), 'error');
+        }
+    } catch (error) {
+        console.error("Stop failed:", error);
+        showToast('Failed to stop control', 'error');
+    }
+});
+// Add this function to poll for current gesture
+async function pollGesture() {
+    try {
+        const response = await fetch('http://localhost:5000/get_gesture');
+        const data = await response.json();
+        
+        // Update UI with current gesture
+        updateGestureDisplay(data.gesture);
+        
+    } catch (error) {
+        console.error('Polling error:', error);
+    }
+}
+
+// Function to update the UI with current gesture
+function updateGestureDisplay(gesture) {
+    const gestureMap = {
+        'UP': { name: 'Up', description: 'Moving cursor up' },
+        'DOWN': { name: 'Down', description: 'Moving cursor down' },
+        'LEFT': { name: 'Left', description: 'Moving cursor left' },
+        'RIGHT': { name: 'Right', description: 'Moving cursor right' },
+        'NONE': { name: 'No Gesture', description: 'Make a gesture to control' }
+    };
+    
+    const info = gestureMap[gesture] || { name: 'Unknown', description: 'Unknown gesture' };
+    
+    // Update the UI elements
+    currentGesture.textContent = info.name;
+    gestureDescription.textContent = info.description;
+    
+    // Highlight active gesture in the list
+    document.querySelectorAll('.gesture-item').forEach(item => {
+        item.style.backgroundColor = '';
+        if (item.querySelector('strong').textContent.includes(info.name)) {
+            item.style.backgroundColor = 'rgba(58, 108, 244, 0.1)';
+        }
+    });
+}
+            // Toast notification function
+            function showToast(message, type = 'success') {
+                toastMessage.textContent = message;
+                toast.className = 'toast';
+                toast.classList.add('show');
+                toast.classList.add('toast-' + type);
+                
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 3000);
+            }
+            
+            // Simulate gesture detection with keyboard navigation gestures
+            function simulateGestureDetection() {
+                const gestures = [
+                    'V_GEST', 'FIST', 'INDEX', 'MID', 'TWO_FINGER_CLOSED', 
+                    'PINCH_MAJOR', 'PINCH_MINOR', 'PALM', 
+                    'INDEX_UP', 'INDEX_DOWN', 'INDEX_RIGHT', 'INDEX_LEFT'
+                ];
+                
+                // Periodically change the displayed gesture
+                setInterval(() => {
+                    if (videoElement.srcObject) {
+                        const randomGesture = gestures[Math.floor(Math.random() * gestures.length)];
+                        updateGestureDisplay(randomGesture);
+                    }
+                }, 3000);
+            }
+
+            // Hide loading spinner on initial page load
+            window.addEventListener('load', function() {
+                loadingSpinner.classList.add('hidden');
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,74 @@
+// App.jsx
+import React, { useState, useEffect } from 'react';
+import { Layout, Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Slider } from '@/components/ui/slider';
+import { Power, Volume2, Brightness } from 'lucide-react';
+
+const App = () => {
+  const [isTracking, setIsTracking] = useState(false);
+  const [gesture, setGesture] = useState(null);
+  const [volume, setVolume] = useState(50);
+  const [brightness, setBrightness] = useState(50);
+
+  return (
+    <Layout className="min-h-screen bg-background">
+      <Card className="max-w-2xl mx-auto my-8">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold text-center">
+            Gesture Control Interface
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex justify-center">
+            <Button
+              onClick={() => setIsTracking(!isTracking)}
+              variant={isTracking ? "destructive" : "default"}
+              className="w-32"
+            >
+              <Power className="mr-2 h-4 w-4" color="white" />
+              {isTracking ? 'Stop' : 'Start'}
+            </Button>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">Volume</span>
+              <span className="text-sm">{volume}%</span>
+            </div>
+            <Slider
+              value={[volume]}
+              onValueChange={(value) => setVolume(value[0])}
+              max={100}
+              step={1}
+              disabled={!isTracking}
+            />
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">Brightness</span>
+              <span className="text-sm">{brightness}%</span>
+            </div>
+            <Slider
+              value={[brightness]}
+              onValueChange={(value) => setBrightness(value[0])}
+              max={100}
+              step={1}
+              disabled={!isTracking}
+            />
+          </div>
+
+          <div className="mt-6 p-4 bg-muted rounded-lg">
+            <h3 className="text-lg font-semibold mb-2">Current Gesture</h3>
+            <p className="text-sm text-muted-foreground">
+              {gesture ? `Detected: ${gesture}` : 'No gesture detected'}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </Layout>
+  );
+};
+
+export default App;

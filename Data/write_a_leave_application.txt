@@ -1,0 +1,32 @@
+Here is a sample leave application:
+
+**Leave Application**
+
+**To:** [Manager's Name]
+**Date:** [Current Date]
+
+**Subject:** Request for Leave on [Leave Date(s)]
+
+Dear [Manager's Name],
+
+I am writing to request a leave of absence on [Leave Date(s)] as I need to [briefly mention the reason for leave, e.g. attend a family function, take care of a personal matter, etc.].
+
+I will ensure that all my tasks are completed and my work is up to date before taking the leave. I will also make arrangements to ensure a smooth transition of my responsibilities during my absence.
+
+The details of my leave are as follows:
+
+* Leave Type: [Annual Leave, Sick Leave, etc.]
+* Leave Dates: [Leave Date(s)]
+* Number of Days: [Number of days]
+
+I would greatly appreciate it if you could approve my request. If there are any concerns or issues, please let me know and I will do my best to address them.
+
+Thank you for considering my request.
+
+Sincerely,
+
+[Your Name]
+[Your Designation]
+[Your Contact Information]
+
+Please note that this is just a sample, and you should customize it according to your organization's policies and your specific needs.
