@@ -1,112 +1,104 @@
 from googlesearch import search
 from groq import Groq
-from json import dump,load
+from json import dump, load
 import datetime
 from dotenv import dotenv_values
+import os
 
-env_vars =  dotenv_values("../.env")
+env_vars = dotenv_values(".env")
 
+GroqAPIKey = env_vars.get("GroqAPIKey")
 Username = env_vars.get("Username")
 Assistantname = env_vars.get("Assistantname")
-GroqAPIKey = ""
 
-# Initialize the Groq client with the provided API key.
 client = Groq(api_key=GroqAPIKey)
 
-# Define the system instructions for the chatbot.
 System = f"""Hello, I am {Username}, You are a very accurate and advanced AI chatbot named {Assistantname} which has real-time up-to-date information from the internet.
 *** Provide Answers In a Professional Way, make sure to add full stops, commas, question marks, and use proper grammar.***
 *** Just answer the question from the provided data in a professional way. ***"""
 
-# Try to load the chat log from a JSON file, or create an empty one if it doesn't exist.
+current_dir = os.path.dirname(os.path.abspath(_file_))
+chatlog_path = os.path.join(current_dir, "..", "Data", "ChatLog.json")
+
 try:
-    with open(r"Data\ChatLog.json", "r") as f:
-        messages = load(f)
+    with open(chatlog_path, "r", encoding="utf-8") as f:
+        _ = load(f)
 except:
-    with open(r"Data\ChatLog.json", "w") as f:
+    with open(chatlog_path, "w", encoding="utf-8") as f:
         dump([], f)
 
-# Function to perform a Google search and format the results.
 def GoogleSearch(query):
     results = list(search(query, advanced=True, num_results=5))
     Answer = f"The search results for '{query}' are:\n[start]\n"
-
     for i in results:
         Answer += f"Title: {i.title}\nDescription: {i.description}\n\n"
-
     Answer += "[end]"
     return Answer
 
-# Function to clean up the answer by removing empty lines.
 def AnswerModifier(Answer):
     lines = Answer.split('\n')
     non_empty_lines = [line for line in lines if line.strip()]
-    modified_answer = '\n'.join(non_empty_lines)
-    return modified_answer
+    return '\n'.join(non_empty_lines)
 
-# Predefined chatbot conversation system message and an initial user message.
 SystemChatBot = [
     {"role": "system", "content": System},
     {"role": "user", "content": "Hi"},
     {"role": "assistant", "content": "Hello, how can I help you?"}
 ]
 
-# Function to get real-time information like the current date and time.
 def Information():
-    data = ""
-    current_date_time = datetime.datetime.now()
-    day = current_date_time.strftime("%A")
-    date = current_date_time.strftime("%d")
-    month = current_date_time.strftime("%B")
-    year = current_date_time.strftime("%Y")
-    hour = current_date_time.strftime("%H")
-    minute = current_date_time.strftime("%M")
-    second = current_date_time.strftime("%S")
-    
-    data += f"Use This Real-time Information if needed:\n"
-    data += f"Day: {day}\n"
-    data += f"Date: {date}\n"
-    data += f"Month: {month}\n"
-    data += f"Year: {year}\n"
-    data += f"Time: {hour} hours, {minute} minutes, {second} seconds.\n"
-    
-    return data
+    now = datetime.datetime.now()
+    return (
+        "Use This Real-time Information if needed:\n"
+        f"Day: {now.strftime('%A')}\n"
+        f"Date: {now.strftime('%d')}\n"
+        f"Month: {now.strftime('%B')}\n"
+        f"Year: {now.strftime('%Y')}\n"
+        f"Time: {now.strftime('%H')} hours, {now.strftime('%M')} minutes, {now.strftime('%S')} seconds.\n"
+    )
 
-# Function to handle real-time search and response generation.
 def RealtimeSearchEngine(prompt):
-    global SystemChatBot, messages
+    if len(prompt) > 300:
+        prompt = prompt[:300]
 
-    # Load the chat log from the JSON file.
-    with open(r"Data\ChatLog.json", "r") as f:
-        messages = load(f)
-    messages.append({"role": "user", "content": f"{prompt}"})
-    
-    SystemChatBot.append({"role": "system", "content": GoogleSearch(prompt)})
+    try:
+        with open(chatlog_path, "r", encoding="utf-8") as f:
+            full_log = load(f)
+            messages = full_log[-2:] if len(full_log) > 2 else full_log
+    except:
+        messages = []
+
+    messages.append({"role": "user", "content": prompt})
+
+    search_result = {"role": "system", "content": GoogleSearch(prompt)}
+    if len(SystemChatBot) > 5:
+        SystemChatBot[:] = SystemChatBot[:3]
+    SystemChatBot.append(search_result)
+
     completion = client.chat.completions.create(
         model="llama3-70b-8192",
         messages=SystemChatBot + [{"role": "system", "content": Information()}] + messages,
         temperature=0.7,
-        max_tokens=2048,
+        max_tokens=1024,
         top_p=1,
-        stream=True,
-        stop=None
+        stream=True
     )
-    
+
     Answer = ""
     for chunk in completion:
         if chunk.choices[0].delta.content:
             Answer += chunk.choices[0].delta.content
-            
+
     Answer = Answer.strip().replace("</s>", "")
     messages.append({"role": "assistant", "content": Answer})
-    with open(r"Data\ChatLog.json", "w") as f:
-        dump(messages, f, indent=4)
-    
-    SystemChatBot.pop()
-    return AnswerModifier(Answer=Answer)
 
-# Main entry point of the program for interactive querying.
-if __name__ == "__main__":
+    with open(chatlog_path, "w", encoding="utf-8") as f:
+        dump(messages, f, indent=4)
+
+    SystemChatBot.pop()
+    return AnswerModifier(Answer)
+
+if _name_ == "_main_":
     while True:
         prompt = input("Enter your question: ")
-        print(RealtimeSearchEngine(prompt))        
+        print(RealtimeSearchEngine(prompt))
